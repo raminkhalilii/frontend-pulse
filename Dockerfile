@@ -18,6 +18,9 @@ ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 
 RUN npm run build
 
+# Ensure public/ exists so the COPY in the runner stage never fails
+RUN mkdir -p /app/public
+
 # ── Stage 2: Runtime ──────────────────────────────────────────────────────────
 FROM node:22-alpine AS runner
 
