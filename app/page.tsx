@@ -1,7 +1,17 @@
-import { redirect } from 'next/navigation';
+import Navbar from '@/components/layout/Navbar'
+import { Footer } from '@/components/layout/Footer'
+import { Hero } from '@/components/sections/Hero'
+import { ArchitectureFeatures } from '@/components/sections/ArchitectureFeatures'
+import { CTA } from '@/components/sections/CTA'
 
-// The middleware already handles the redirect logic, but this ensures the root
-// path always bounces unauthenticated users to /login via server redirect.
-export default function RootPage() {
-  redirect('/login');
+export default function LandingPage() {
+  return (
+    <main className="w-full bg-[#0A0F1A] text-white">
+      <Navbar />
+      <Hero />
+      <ArchitectureFeatures />
+      <CTA />
+      <Footer />
+    </main>
+  )
 }

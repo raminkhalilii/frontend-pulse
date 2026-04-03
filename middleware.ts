@@ -1,22 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { TOKEN_COOKIE } from '@/lib/auth';
 
-const PUBLIC_ROUTES = ['/login', '/register'];
+// Routes that only unauthenticated users should access
+const AUTH_ROUTES = ['/login', '/register'] as const;
 
-export function middleware(request: NextRequest) {
+// The landing page is publicly accessible — unauthenticated visitors should
+// see it instead of being bounced straight to /login.
+const LANDING_PATH = '/';
+
+// /api/* paths are excluded from the matcher below and are proxied to the
+// backend, which enforces its own JWT guard — no middleware check needed.
+
+export function middleware(request: NextRequest): NextResponse {
   const token = request.cookies.get(TOKEN_COOKIE)?.value;
   const { pathname } = request.nextUrl;
 
-  const isPublic = PUBLIC_ROUTES.some((r) => pathname.startsWith(r));
-  const isRoot = pathname === '/';
+  const isAuthRoute = AUTH_ROUTES.some((r) => pathname.startsWith(r));
+  const isLanding   = pathname === LANDING_PATH;
 
-  // Unauthenticated user hitting a protected route → login
-  if (!token && !isPublic) {
+  // ── Unauthenticated ───────────────────────────────────────────────────────
+  // Landing page and auth screens pass through freely.
+  // Every other route requires a token → redirect to /login.
+  if (!token) {
+    if (isLanding || isAuthRoute) return NextResponse.next();
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
-  // Authenticated user hitting login/register/root → dashboard
-  if (token && (isPublic || isRoot)) {
+  // ── Authenticated ─────────────────────────────────────────────────────────
+  // Authenticated users have no reason to view the landing page or auth
+  // screens — send them directly to the dashboard.
+  if (isLanding || isAuthRoute) {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
@@ -24,6 +37,7 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  // Run on page routes only — skip Next.js internals, static files, and API proxy routes
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|api/).*)'],
+  // Run only on page routes.
+  // Skips: Next.js internals, static assets, images, and all /api/* paths.
+  matcher: ['/((?!_next/static|_next/image|favicon\\.ico|api/).*)'],
 };
