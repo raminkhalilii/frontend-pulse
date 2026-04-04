@@ -84,10 +84,10 @@ export default function DashboardPage() {
 
   return (
     <DashboardLayout>
-      <div className="mx-auto max-w-7xl px-6 py-8 lg:px-8">
+      <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
 
         {/* ── Page header ── */}
-        <div className="mb-8 flex items-center justify-between">
+        <div className="mb-5 flex items-center justify-between gap-3 sm:mb-8">
           <div>
             <h1 className="text-xl font-bold text-white">Monitors</h1>
             <p className="mt-0.5 text-sm text-slate-500">

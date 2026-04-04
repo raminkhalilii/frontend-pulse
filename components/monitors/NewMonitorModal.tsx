@@ -78,16 +78,16 @@ export function NewMonitorModal({ open, onClose, onCreated }: NewMonitorModalPro
             role="dialog"
             aria-modal="true"
             aria-labelledby="modal-title"
-            className="fixed inset-0 z-50 flex items-center justify-center px-4"
-            initial={{ opacity: 0, scale: 0.95, y: 10 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 10 }}
-            transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
+            className="fixed inset-x-0 bottom-0 z-50 flex justify-center sm:inset-0 sm:items-center sm:px-4"
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 40 }}
+            transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
           >
             <GlassCard
               hoverEffect={false}
               glowColor="none"
-              className="w-full max-w-md p-7"
+              className="w-full max-h-[90vh] overflow-y-auto rounded-b-none rounded-t-2xl p-5 sm:max-h-none sm:max-w-md sm:rounded-2xl sm:p-7"
               style={{ borderColor: 'rgba(59,130,246,0.22)' }}
             >
               {/* Header */}

@@ -57,7 +57,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     <div className="flex h-screen bg-background overflow-hidden">
 
       {/* ── Sidebar ───────────────────────────────────────────────────────── */}
-      <aside className="fixed inset-y-0 left-0 z-30 flex w-60 flex-col border-r border-white/[0.06] bg-gradient-to-b from-white/[0.04] to-white/[0.02] backdrop-blur-xl">
+      <aside className="hidden md:fixed md:inset-y-0 md:left-0 md:z-30 md:flex md:w-60 md:flex-col border-r border-white/[0.06] bg-gradient-to-b from-white/[0.04] to-white/[0.02] backdrop-blur-xl">
 
         {/* Logo */}
         <div className="flex h-14 flex-none items-center border-b border-white/[0.05] px-5">
@@ -113,7 +113,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       </aside>
 
       {/* ── Right column ──────────────────────────────────────────────────── */}
-      <div className="ml-60 flex min-w-0 flex-1 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col md:ml-60">
 
         {/* Topbar */}
         <header className="sticky top-0 z-20 flex h-14 flex-none items-center justify-between border-b border-white/[0.06] bg-background/85 px-6 backdrop-blur-xl">
@@ -142,10 +142,40 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         </header>
 
         {/* Page content */}
-        <main className="flex-1 overflow-y-auto bg-[#05080F] shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+        <main className="flex-1 overflow-y-auto bg-[#05080F] pb-16 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] md:pb-0">
           {children}
         </main>
       </div>
+
+      {/* ── Mobile bottom tab bar ──────────────────────────────────────────── */}
+      <nav
+        aria-label="Mobile navigation"
+        className="fixed inset-x-0 bottom-0 z-30 flex h-16 items-stretch border-t border-white/[0.06] bg-background/95 backdrop-blur-xl md:hidden"
+      >
+        {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
+          const isActive = pathname === href || pathname.startsWith(`${href}/`)
+          return (
+            <Link
+              key={href}
+              href={href}
+              className={[
+                'flex flex-1 flex-col items-center justify-center gap-0.5 text-[10px] font-medium transition-colors',
+                isActive ? 'text-pulse-blue' : 'text-slate-500',
+              ].join(' ')}
+            >
+              <Icon size={20} aria-hidden="true" />
+              {label}
+            </Link>
+          )
+        })}
+        <button
+          onClick={handleLogout}
+          className="flex flex-1 flex-col items-center justify-center gap-0.5 text-[10px] font-medium text-slate-500 transition-colors hover:text-pulse-red"
+        >
+          <LogOut size={20} aria-hidden="true" />
+          Log out
+        </button>
+      </nav>
     </div>
   )
 }
