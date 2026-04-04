@@ -12,7 +12,8 @@ export const TOKEN_COOKIE = 'pulse_access_token';
 const MAX_AGE = 7 * 24 * 60 * 60; // 7 days in seconds
 
 export function setToken(token: string): void {
-  document.cookie = `${TOKEN_COOKIE}=${token}; path=/; max-age=${MAX_AGE}; SameSite=Strict`;
+  const secure = window.location.protocol === 'https:' ? '; Secure' : '';
+  document.cookie = `${TOKEN_COOKIE}=${token}; path=/; max-age=${MAX_AGE}; SameSite=Lax${secure}`;
 }
 
 export function getToken(): string | null {

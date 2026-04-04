@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, FormEvent } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import Button from '@/components/ui/Button'
@@ -9,7 +8,6 @@ import { AuthShell, FormField } from '@/components/auth/AuthShell'
 import { loginUser } from '@/lib/api'
 
 export default function LoginPage() {
-  const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -21,7 +19,7 @@ export default function LoginPage() {
     setLoading(true)
     try {
       await loginUser(email, password)
-      router.push('/dashboard')
+      window.location.replace('/dashboard')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed. Please try again.')
     } finally {
