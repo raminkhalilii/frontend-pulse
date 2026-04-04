@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { motion } from 'framer-motion'
 import Button from '@/components/ui/Button'
 import { ArrowRight } from 'lucide-react'
+import { useAuthStatus } from '@/hooks/useAuthStatus'
 
 // ─── Animated gradient mesh background ───────────────────────────────────────
 // Three blurred orbs drift slowly at different speeds/directions,
@@ -78,9 +79,9 @@ function GradientMesh() {
 // ─── Social proof strip ───────────────────────────────────────────────────────
 
 const STATS = [
-  { value: '99.98%', label: 'Uptime SLA' },
-  { value: '<5ms',   label: 'WS latency' },
-  { value: '100k+',  label: 'Checks / day' },
+  { value: '100%',        label: 'Container Uptime', sublabel: 'Docker · auto-healing'   },
+  { value: '<50ms',       label: 'WS Latency',        sublabel: 'NestJS · Socket.io'      },
+  { value: 'Distributed', label: 'Workers',            sublabel: 'Redis & BullMQ'          },
 ]
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -96,6 +97,9 @@ const ITEM_VARIANTS = {
 }
 
 export function CTA() {
+  const isAuthenticated = useAuthStatus()
+  const ctaHref = isAuthenticated ? '/dashboard' : '/login'
+
   return (
     <section className="relative z-30 py-32 bg-[#0A0F1A] overflow-hidden">
       <GradientMesh />
@@ -161,7 +165,7 @@ export function CTA() {
 
           {/* CTA button */}
           <motion.div variants={ITEM_VARIANTS}>
-            <Link href="/login" tabIndex={-1}>
+            <Link href={ctaHref} tabIndex={-1}>
               <Button
                 variant="primary"
                 size="lg"
@@ -177,10 +181,11 @@ export function CTA() {
             variants={ITEM_VARIANTS}
             className="flex flex-wrap items-center justify-center gap-8 pt-4"
           >
-            {STATS.map(({ value, label }) => (
+            {STATS.map(({ value, label, sublabel }) => (
               <div key={label} className="flex flex-col items-center gap-0.5">
                 <span className="text-2xl font-bold text-white font-mono">{value}</span>
                 <span className="text-[11px] text-slate-600 tracking-wide">{label}</span>
+                <span className="text-[10px] text-slate-700 tracking-wider">{sublabel}</span>
               </div>
             ))}
           </motion.div>

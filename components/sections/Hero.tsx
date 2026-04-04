@@ -1,10 +1,13 @@
 'use client'
 
-import { Suspense } from 'react'
+import { Suspense, useState } from 'react'
+import Link from 'next/link'
 import { Canvas } from '@react-three/fiber'
 import { PerspectiveCamera } from '@react-three/drei'
 import { NetworkScene } from '@/components/3d/NetworkScene'
 import Button from '@/components/ui/Button'
+import { TechStackModal } from '@/components/modals/TechStackModal'
+import { useAuthStatus } from '@/hooks/useAuthStatus'
 
 // ─── Loader ───────────────────────────────────────────────────────────────────
 
@@ -22,6 +25,10 @@ function SceneLoader() {
 // ─── Hero ─────────────────────────────────────────────────────────────────────
 
 export function Hero() {
+  const isAuthenticated   = useAuthStatus()
+  const ctaHref           = isAuthenticated ? '/dashboard' : '/login'
+  const [archOpen, setArchOpen] = useState(false)
+
   return (
     <section className="relative w-full h-screen overflow-hidden bg-[#0A0F1A] z-10">
 
@@ -93,10 +100,12 @@ export function Hero() {
 
         {/* CTA Buttons */}
         <div className="flex flex-wrap items-center justify-center gap-4 mt-2">
-          <Button variant="primary" size="lg">
-            Get Started
-          </Button>
-          <Button variant="outline" size="lg">
+          <Link href={ctaHref} tabIndex={-1}>
+            <Button variant="primary" size="lg">
+              Get Started
+            </Button>
+          </Link>
+          <Button variant="outline" size="lg" onClick={() => setArchOpen(true)}>
             View Architecture
           </Button>
         </div>
@@ -106,6 +115,8 @@ export function Hero() {
           9 nodes monitored · 17 connections · packets in flight
         </p>
       </div>
+
+      <TechStackModal open={archOpen} onClose={() => setArchOpen(false)} />
     </section>
   )
 }

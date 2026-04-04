@@ -2,9 +2,13 @@
 
 import { motion, useScroll, useTransform } from 'framer-motion';
 import Link from 'next/link';
+import { useAuthStatus } from '@/hooks/useAuthStatus';
 
 export default function Navbar() {
   const { scrollY } = useScroll();
+  const isAuthenticated = useAuthStatus();
+  const ctaHref  = isAuthenticated ? '/dashboard' : '/login';
+  const ctaLabel = isAuthenticated ? 'Go to Dashboard' : 'Login';
 
   /* Increase backdrop opacity as the user scrolls */
   const bgOpacity = useTransform(scrollY, [0, 80], [0, 1]);
@@ -48,7 +52,7 @@ export default function Navbar() {
 
         {/* ── CTA ── */}
         <Link
-          href="/login"
+          href={ctaHref}
           className={[
             'inline-flex items-center gap-2',
             'px-5 py-2.5 text-sm font-semibold rounded-lg',
@@ -69,7 +73,7 @@ export default function Navbar() {
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pulse-green/60',
           ].join(' ')}
         >
-          Go to Dashboard
+          {ctaLabel}
           <ArrowRightIcon />
         </Link>
       </nav>

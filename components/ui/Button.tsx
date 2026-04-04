@@ -102,7 +102,7 @@ export default function Button({
       disabled={isDisabled}
       whileTap={{ scale: isDisabled ? 1 : 0.96 }}
       className={[
-        'inline-flex items-center justify-center font-semibold',
+        'inline-flex items-center justify-center font-semibold cursor-pointer',
         'disabled:opacity-50 disabled:cursor-not-allowed',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pulse-blue/60',
         VARIANT_STYLES[variant],
