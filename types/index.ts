@@ -35,6 +35,13 @@ export interface CreateMonitorPayload {
   frequency: MonitorFrequency;
 }
 
+export interface UpdateMonitorPayload {
+  name?: string;
+  url?: string;
+  frequency?: MonitorFrequency;
+  isActive?: boolean;
+}
+
 export interface AuthResponse {
   accessToken: string;
 }

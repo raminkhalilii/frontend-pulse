@@ -1,12 +1,12 @@
 'use client'
 
-import { useState, FormEvent } from 'react'
+import { useState, FormEvent, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X } from 'lucide-react'
 import GlassCard from '@/components/ui/GlassCard'
 import Button from '@/components/ui/Button'
 import { FormField } from '@/components/auth/AuthShell'
-import { createMonitor } from '@/lib/api'
+import { updateMonitor } from '@/lib/api'
 import type { Monitor, MonitorFrequency } from '@/types'
 
 // ─── Frequency pill options ───────────────────────────────────────────────────
@@ -19,33 +19,46 @@ const FREQ_OPTIONS: { value: MonitorFrequency; label: string }[] = [
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-interface NewMonitorModalProps {
+interface EditMonitorModalProps {
   open: boolean
+  monitor: Monitor | null
   onClose: () => void
-  onCreated: (monitor: Monitor) => void
+  onUpdated: (monitor: Monitor) => void
 }
 
-export function NewMonitorModal({ open, onClose, onCreated }: NewMonitorModalProps) {
+export function EditMonitorModal({ open, monitor, onClose, onUpdated }: EditMonitorModalProps) {
   const [name,      setName]      = useState('')
   const [url,       setUrl]       = useState('')
   const [frequency, setFrequency] = useState<MonitorFrequency>('FIVE_MIN')
   const [error,     setError]     = useState('')
   const [loading,   setLoading]   = useState(false)
 
+  // Populate form when monitor changes
+  useEffect(() => {
+    if (monitor) {
+      setName(monitor.name)
+      setUrl(monitor.url)
+      setFrequency(monitor.frequency)
+      setError('')
+    }
+  }, [monitor, open])
+
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
+    if (!monitor) return
+
     setError('')
     setLoading(true)
     try {
-      const monitor = await createMonitor({ name, url, frequency })
-      onCreated(monitor)
-      // Reset form
-      setName('')
-      setUrl('')
-      setFrequency('FIVE_MIN')
+      const updated = await updateMonitor(monitor.id, {
+        name: name !== monitor.name ? name : undefined,
+        url: url !== monitor.url ? url : undefined,
+        frequency: frequency !== monitor.frequency ? frequency : undefined,
+      })
+      onUpdated(updated)
       onClose()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create monitor.')
+      setError(err instanceof Error ? err.message : 'Failed to update monitor.')
     } finally {
       setLoading(false)
     }
@@ -58,7 +71,7 @@ export function NewMonitorModal({ open, onClose, onCreated }: NewMonitorModalPro
 
   return (
     <AnimatePresence>
-      {open && (
+      {open && monitor && (
         <>
           {/* Backdrop */}
           <motion.div
@@ -77,7 +90,7 @@ export function NewMonitorModal({ open, onClose, onCreated }: NewMonitorModalPro
             key="modal-dialog"
             role="dialog"
             aria-modal="true"
-            aria-labelledby="modal-title"
+            aria-labelledby="edit-modal-title"
             className="fixed inset-x-0 bottom-0 z-50 flex justify-center sm:inset-0 sm:items-center sm:px-4"
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
@@ -94,13 +107,13 @@ export function NewMonitorModal({ open, onClose, onCreated }: NewMonitorModalPro
               <div className="mb-6 flex items-start justify-between">
                 <div>
                   <h2
-                    id="modal-title"
+                    id="edit-modal-title"
                     className="text-base font-semibold text-white"
                   >
-                    New Monitor
+                    Edit Monitor
                   </h2>
                   <p className="mt-0.5 text-sm text-slate-500">
-                    Track the uptime of any public URL.
+                    Update the monitor settings.
                   </p>
                 </div>
                 <button
@@ -117,7 +130,7 @@ export function NewMonitorModal({ open, onClose, onCreated }: NewMonitorModalPro
               <form onSubmit={handleSubmit} className="space-y-5" noValidate>
                 <FormField
                   label="Monitor name"
-                  id="mon-name"
+                  id="edit-mon-name"
                   type="text"
                   required
                   autoComplete="off"
@@ -128,13 +141,13 @@ export function NewMonitorModal({ open, onClose, onCreated }: NewMonitorModalPro
 
                 <FormField
                   label="URL"
-                  id="mon-url"
+                  id="edit-mon-url"
                   type="url"
                   required
                   autoComplete="off"
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
-                  placeholder="https://api.example.com/health"
+                  placeholder="example.com or https://api.example.com/health"
                 />
 
                 {/* Frequency pill selector */}
@@ -185,7 +198,7 @@ export function NewMonitorModal({ open, onClose, onCreated }: NewMonitorModalPro
                     fullWidth
                     isLoading={loading}
                   >
-                    Create monitor
+                    Save changes
                   </Button>
                   <Button
                     type="button"

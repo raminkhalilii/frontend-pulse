@@ -6,6 +6,7 @@ import { motion } from 'framer-motion'
 import DashboardLayout from '@/components/layout/DashboardLayout'
 import { MonitorCard, type PingEntry } from '@/components/monitors/MonitorCard'
 import { NewMonitorModal } from '@/components/monitors/NewMonitorModal'
+import { EditMonitorModal } from '@/components/monitors/EditMonitorModal'
 import Button from '@/components/ui/Button'
 import { getMonitors } from '@/lib/api'
 import { usePulseSocket } from '@/hooks/usePulseSocket'
@@ -32,11 +33,12 @@ function buildInitialHistory(monitors: Monitor[]): HistoryMap {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
-  const [monitors,   setMonitors]   = useState<Monitor[]>([])
-  const [historyMap, setHistoryMap] = useState<HistoryMap>({})
-  const [loading,    setLoading]    = useState(true)
-  const [error,      setError]      = useState('')
-  const [modalOpen,  setModalOpen]  = useState(false)
+  const [monitors,      setMonitors]      = useState<Monitor[]>([])
+  const [historyMap,    setHistoryMap]    = useState<HistoryMap>({})
+  const [loading,       setLoading]       = useState(true)
+  const [error,         setError]         = useState('')
+  const [modalOpen,     setModalOpen]     = useState(false)
+  const [editingMonitor, setEditingMonitor] = useState<Monitor | null>(null)
 
   const fetchMonitors = useCallback(async () => {
     try {
@@ -82,6 +84,12 @@ export default function DashboardPage() {
   function handleMonitorCreated(monitor: Monitor) {
     setMonitors((prev) => [monitor, ...prev])
     setHistoryMap((prev) => ({ ...prev, [monitor.id]: [] }))
+  }
+
+  function handleMonitorEdited(updated: Monitor) {
+    setMonitors((prev) =>
+      prev.map((m) => (m.id === updated.id ? updated : m))
+    )
   }
 
   return (
@@ -136,6 +144,7 @@ export default function DashboardPage() {
                 <MonitorCard
                   monitor={monitor}
                   history={historyMap[monitor.id] ?? []}
+                  onEdit={(m) => setEditingMonitor(m)}
                 />
               </motion.div>
             ))}
@@ -147,6 +156,13 @@ export default function DashboardPage() {
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         onCreated={handleMonitorCreated}
+      />
+
+      <EditMonitorModal
+        open={editingMonitor !== null}
+        monitor={editingMonitor}
+        onClose={() => setEditingMonitor(null)}
+        onUpdated={handleMonitorEdited}
       />
     </DashboardLayout>
   )

@@ -1,5 +1,5 @@
 import { getToken, removeToken, setToken } from './auth';
-import type { AuthResponse, CreateMonitorPayload, Monitor } from '@/types';
+import type { AuthResponse, CreateMonitorPayload, UpdateMonitorPayload, Monitor } from '@/types';
 
 /**
  * All API requests go through the Next.js rewrite proxy at /api,
@@ -32,7 +32,7 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
 
-  if (res.status === 401) {
+  if (res.status === 401 && auth !== false) {
     removeToken();
     window.location.href = '/login';
     throw new Error('Session expired. Please log in again.');
@@ -83,4 +83,8 @@ export async function getMonitors(): Promise<Monitor[]> {
 
 export async function createMonitor(payload: CreateMonitorPayload): Promise<Monitor> {
   return request<Monitor>('/monitors', { method: 'POST', body: payload });
+}
+
+export async function updateMonitor(id: string, payload: UpdateMonitorPayload): Promise<Monitor> {
+  return request<Monitor>(`/monitors/${id}`, { method: 'PATCH', body: payload });
 }

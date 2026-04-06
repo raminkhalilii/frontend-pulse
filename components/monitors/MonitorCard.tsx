@@ -1,7 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { ExternalLink } from 'lucide-react'
+import { ExternalLink, Edit2 } from 'lucide-react'
 import type { Monitor, MonitorStatus } from '@/types'
 import GlassCard from '@/components/ui/GlassCard'
 
@@ -54,9 +54,10 @@ function Sparkline({ history }: { history: PingEntry[] }) {
 interface MonitorCardProps {
   monitor: Monitor
   history: PingEntry[]
+  onEdit?: (monitor: Monitor) => void
 }
 
-export function MonitorCard({ monitor, history }: MonitorCardProps) {
+export function MonitorCard({ monitor, history, onEdit }: MonitorCardProps) {
   const isDown    = monitor.latestStatus === 'DOWN'
   const isUp      = monitor.latestStatus === 'UP'
   const hasStatus = monitor.latestStatus !== undefined
@@ -111,7 +112,15 @@ export function MonitorCard({ monitor, history }: MonitorCardProps) {
             </a>
           </div>
 
-          <div className="flex flex-none items-center gap-1.5">
+          <div className="flex flex-none items-center gap-2">
+            <button
+              onClick={() => onEdit?.(monitor)}
+              aria-label="Edit monitor"
+              className="cursor-pointer text-slate-500 transition-colors hover:text-slate-300"
+              title="Edit monitor"
+            >
+              <Edit2 size={14} />
+            </button>
             {!hasStatus ? (
               <span className="font-mono text-[10px] text-slate-600">PENDING</span>
             ) : isUp ? (
