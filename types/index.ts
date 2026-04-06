@@ -1,6 +1,12 @@
 export type MonitorFrequency = 'ONE_MIN' | 'FIVE_MIN' | 'THIRTY_MIN';
 export type MonitorStatus = 'UP' | 'DOWN';
 
+export interface HeartbeatEntry {
+  status: MonitorStatus;
+  latencyMs: number | null;
+  timestamp: string;
+}
+
 export interface Monitor {
   id: string;
   name: string;
@@ -13,6 +19,7 @@ export interface Monitor {
   latestStatus?: MonitorStatus;
   latestLatencyMs?: number | null;
   latestCheckedAt?: string;
+  heartbeats?: HeartbeatEntry[];
 }
 
 export interface MonitorUpdatedPayload {

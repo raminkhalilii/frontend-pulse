@@ -20,9 +20,11 @@ function buildInitialHistory(monitors: Monitor[]): HistoryMap {
   return Object.fromEntries(
     monitors.map((m) => [
       m.id,
-      m.latestStatus
-        ? [{ status: m.latestStatus, latencyMs: m.latestLatencyMs ?? null }]
-        : [],
+      m.heartbeats?.length
+        ? m.heartbeats.map((h) => ({ status: h.status, latencyMs: h.latencyMs }))
+        : m.latestStatus
+          ? [{ status: m.latestStatus, latencyMs: m.latestLatencyMs ?? null }]
+          : [],
     ])
   )
 }
@@ -158,8 +160,35 @@ function LoadingSkeleton() {
       {Array.from({ length: 6 }).map((_, i) => (
         <div
           key={i}
-          className="h-44 animate-pulse rounded-2xl border border-white/[0.05] bg-white/[0.02]"
-        />
+          className="animate-pulse rounded-2xl border border-white/[0.05] bg-white/[0.02] p-5"
+        >
+          <div className="mb-4 flex items-start justify-between">
+            <div className="space-y-2">
+              <div className="h-4 w-28 rounded bg-white/[0.06]" />
+              <div className="h-3 w-40 rounded bg-white/[0.04]" />
+            </div>
+            <div className="h-3 w-10 rounded bg-white/[0.06]" />
+          </div>
+          <div className="mb-4 flex items-end gap-[3px] h-8">
+            {Array.from({ length: 10 }).map((_, j) => (
+              <div
+                key={j}
+                className="flex-1 rounded-[2px] bg-white/[0.06]"
+                style={{ height: `${8 + ((j * 7 + i * 3) % 18)}px` }}
+              />
+            ))}
+          </div>
+          <div className="flex items-end justify-between border-t border-white/[0.05] pt-3">
+            <div className="space-y-1.5">
+              <div className="h-2.5 w-12 rounded bg-white/[0.04]" />
+              <div className="h-4 w-16 rounded bg-white/[0.06]" />
+            </div>
+            <div className="flex flex-col items-end space-y-1.5">
+              <div className="h-2.5 w-12 rounded bg-white/[0.04]" />
+              <div className="h-4 w-14 rounded bg-white/[0.06]" />
+            </div>
+          </div>
+        </div>
       ))}
     </div>
   )
