@@ -27,9 +27,9 @@ export function middleware(request: NextRequest): NextResponse {
   }
 
   // ── Authenticated ─────────────────────────────────────────────────────────
-  // Authenticated users have no reason to view the landing page or auth
-  // screens — send them directly to the dashboard.
-  if (isLanding || isAuthRoute) {
+  // The landing page is auth-aware (shows "Go to Dashboard" when logged in),
+  // so let authenticated users visit it freely. Only bounce auth screens.
+  if (isAuthRoute) {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 

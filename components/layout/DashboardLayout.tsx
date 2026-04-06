@@ -50,7 +50,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   function handleLogout() {
     removeToken()
-    router.push('/login')
+    router.push('/')
   }
 
   return (
@@ -61,7 +61,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
         {/* Logo */}
         <div className="flex h-14 flex-none items-center border-b border-white/[0.05] px-5">
-          <Link href="/dashboard" className="group flex items-center gap-2.5">
+          <Link href="/" className="group flex items-center gap-2.5">
             <div className="flex h-7 w-7 items-center justify-center rounded-md bg-gradient-to-br from-pulse-green to-emerald-400 shadow-[0_0_14px_rgba(16,185,129,0.40)] transition-shadow duration-300 group-hover:shadow-[0_0_20px_rgba(16,185,129,0.60)]">
               <span className="font-mono text-xs font-bold leading-none text-background">P</span>
             </div>
