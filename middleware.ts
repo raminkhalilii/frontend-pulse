@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { TOKEN_COOKIE } from '@/lib/auth';
 
 // Routes that only unauthenticated users should access
-const AUTH_ROUTES = ['/login', '/register'] as const;
+const AUTH_ROUTES = ['/login', '/register', '/auth/callback'] as const;
 
 // The landing page is publicly accessible — unauthenticated visitors should
 // see it instead of being bounced straight to /login.
