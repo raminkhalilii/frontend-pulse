@@ -104,7 +104,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         <div className="flex-none border-t border-white/[0.05] px-3 py-4">
           <button
             onClick={handleLogout}
-            className="flex w-full items-center gap-3 rounded-lg border-l-2 border-transparent px-3 py-2.5 text-sm font-medium text-slate-500 transition-all duration-150 hover:border-pulse-red/50 hover:bg-pulse-red/[0.06] hover:text-pulse-red"
+            className="flex w-full cursor-pointer items-center gap-3 rounded-lg border-l-2 border-transparent px-3 py-2.5 text-sm font-medium text-slate-500 transition-all duration-150 hover:border-pulse-red/50 hover:bg-pulse-red/[0.06] hover:text-pulse-red"
           >
             <LogOut size={16} className="flex-none" aria-hidden="true" />
             Log out
@@ -170,7 +170,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         })}
         <button
           onClick={handleLogout}
-          className="flex flex-1 flex-col items-center justify-center gap-0.5 text-[10px] font-medium text-slate-500 transition-colors hover:text-pulse-red"
+          className="flex flex-1 cursor-pointer flex-col items-center justify-center gap-0.5 text-[10px] font-medium text-slate-500 transition-colors hover:text-pulse-red"
         >
           <LogOut size={20} aria-hidden="true" />
           Log out
