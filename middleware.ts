@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { TOKEN_COOKIE } from '@/lib/auth';
 
-// Routes that only unauthenticated users should access
-const AUTH_ROUTES = ['/login', '/register', '/callback'] as const;
+// Routes that only unauthenticated users should access.
+// /auth/callback is the OAuth landing page — it must be reachable without a
+// token so the client-side handler can read `?access_token=...` and persist it.
+const AUTH_ROUTES = ['/login', '/register', '/auth/callback'] as const;
 
 // The landing page is publicly accessible — unauthenticated visitors should
 // see it instead of being bounced straight to /login.
