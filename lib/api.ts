@@ -1,5 +1,13 @@
 import { getToken, removeToken, setToken } from './auth';
-import type { AuthResponse, CreateMonitorPayload, UpdateMonitorPayload, Monitor } from '@/types';
+import type {
+  AlertChannel,
+  AuthResponse,
+  CreateAlertChannelPayload,
+  CreateMonitorPayload,
+  Monitor,
+  UpdateAlertChannelPayload,
+  UpdateMonitorPayload,
+} from '@/types';
 
 /**
  * All API requests go through the Next.js rewrite proxy at /api,
@@ -87,4 +95,31 @@ export async function createMonitor(payload: CreateMonitorPayload): Promise<Moni
 
 export async function updateMonitor(id: string, payload: UpdateMonitorPayload): Promise<Monitor> {
   return request<Monitor>(`/monitors/${id}`, { method: 'PATCH', body: payload });
+}
+
+// ── Alert Channels ────────────────────────────────────────────────────────────
+
+export async function getAlertChannels(): Promise<AlertChannel[]> {
+  return request<AlertChannel[]>('/alert-channels');
+}
+
+export async function createAlertChannel(
+  payload: CreateAlertChannelPayload,
+): Promise<AlertChannel> {
+  return request<AlertChannel>('/alert-channels', { method: 'POST', body: payload });
+}
+
+export async function updateAlertChannel(
+  id: string,
+  payload: UpdateAlertChannelPayload,
+): Promise<AlertChannel> {
+  return request<AlertChannel>(`/alert-channels/${id}`, { method: 'PATCH', body: payload });
+}
+
+export async function deleteAlertChannel(id: string): Promise<void> {
+  return request<void>(`/alert-channels/${id}`, { method: 'DELETE' });
+}
+
+export async function testAlertChannel(id: string): Promise<void> {
+  return request<void>(`/alert-channels/${id}/test`, { method: 'POST' });
 }

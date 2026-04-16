@@ -45,3 +45,29 @@ export interface UpdateMonitorPayload {
 export interface AuthResponse {
   accessToken: string;
 }
+
+// ── Alert Channels ────────────────────────────────────────────────────────────
+
+export type AlertChannelType = 'EMAIL' | 'WEBHOOK' | 'SLACK' | 'DISCORD';
+
+export interface AlertChannel {
+  id: string;
+  userId: string;
+  type: AlertChannelType;
+  value: string;
+  label: string | null;
+  enabled: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateAlertChannelPayload {
+  type: AlertChannelType;
+  value: string;
+  label?: string;
+}
+
+export interface UpdateAlertChannelPayload {
+  enabled?: boolean;
+  label?: string;
+}

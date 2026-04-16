@@ -3,21 +3,23 @@
 import type { ReactNode } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { Activity, Settings, LogOut, ChevronRight } from 'lucide-react'
+import { Activity, Bell, Settings, LogOut, ChevronRight } from 'lucide-react'
 import { removeToken, getToken } from '@/lib/auth'
 
 // ─── Nav items ────────────────────────────────────────────────────────────────
 
 const NAV_ITEMS = [
-  { href: '/dashboard', label: 'Monitors', icon: Activity },
-  { href: '/settings',  label: 'Settings',  icon: Settings  },
+  { href: '/dashboard',        label: 'Monitors', icon: Activity },
+  { href: '/dashboard/alerts', label: 'Alerts',   icon: Bell     },
+  { href: '/settings',         label: 'Settings', icon: Settings },
 ] as const
 
 // ─── Breadcrumb label map ─────────────────────────────────────────────────────
 
 const PAGE_LABELS: Record<string, string> = {
-  '/dashboard': 'Monitors',
-  '/settings':  'Settings',
+  '/dashboard':        'Monitors',
+  '/dashboard/alerts': 'Alerts',
+  '/settings':         'Settings',
 }
 
 // ─── JWT display helper (client-side decode only — no security guarantees) ────
@@ -77,8 +79,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
           <ul className="space-y-0.5">
             {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
+              // Root dashboard must be an exact match so it doesn't light up
+              // for every nested route like /dashboard/alerts.
               const isActive =
-                pathname === href || pathname.startsWith(`${href}/`)
+                href === '/dashboard'
+                  ? pathname === href
+                  : pathname === href || pathname.startsWith(`${href}/`)
 
               return (
                 <li key={href}>
@@ -153,7 +159,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         className="fixed inset-x-0 bottom-0 z-30 flex h-16 items-stretch border-t border-white/[0.06] bg-background/95 backdrop-blur-xl md:hidden"
       >
         {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
-          const isActive = pathname === href || pathname.startsWith(`${href}/`)
+          const isActive =
+            href === '/dashboard'
+              ? pathname === href
+              : pathname === href || pathname.startsWith(`${href}/`)
           return (
             <Link
               key={href}
