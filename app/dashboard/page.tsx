@@ -9,6 +9,7 @@ import { NewMonitorModal } from '@/components/monitors/NewMonitorModal'
 import { EditMonitorModal } from '@/components/monitors/EditMonitorModal'
 import Button from '@/components/ui/Button'
 import { getMonitors } from '@/lib/api'
+import { isInQuietHours } from '@/lib/quiet-hours'
 import { usePulseSocket } from '@/hooks/usePulseSocket'
 import type { Monitor, MonitorUpdatedPayload } from '@/types'
 
@@ -145,6 +146,11 @@ export default function DashboardPage() {
                   monitor={monitor}
                   history={historyMap[monitor.id] ?? []}
                   onEdit={(m) => setEditingMonitor(m)}
+                  quietHoursActive={
+                    monitor.alertSettings
+                      ? isInQuietHours(monitor.alertSettings)
+                      : false
+                  }
                 />
               </motion.div>
             ))}

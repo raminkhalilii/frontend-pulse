@@ -11,6 +11,14 @@ import type {
   WebhookDeliveryLog,
   WebhookTestResult,
 } from '@/types';
+import type {
+  AlertSettingsResponse,
+  MonitorAlertSettings,
+  SetChannelsPayload,
+  SetChannelsResponse,
+  SuppressedAlert,
+  UpsertAlertSettingsPayload,
+} from '@/types/alert-settings';
 
 /**
  * All API requests go through the Next.js rewrite proxy at /api,
@@ -167,4 +175,49 @@ export async function testSlackChannel(id: string): Promise<PlatformTestResult> 
  */
 export async function testDiscordChannel(id: string): Promise<PlatformTestResult> {
   return request<PlatformTestResult>(`/alert-channels/${id}/test-discord`, { method: 'POST' });
+}
+
+// ── Monitor Alert Settings (Phase 5) ──────────────────────────────────────────
+
+/**
+ * Returns per-monitor alert settings + the channels linked to this monitor.
+ * settings is null when no settings record has been created yet (engine uses defaults).
+ */
+export async function getMonitorAlertSettings(monitorId: string): Promise<AlertSettingsResponse> {
+  return request<AlertSettingsResponse>(`/monitors/${monitorId}/alert-settings`);
+}
+
+/**
+ * Creates or fully replaces the alert settings for a monitor.
+ */
+export async function upsertMonitorAlertSettings(
+  monitorId: string,
+  payload: UpsertAlertSettingsPayload,
+): Promise<MonitorAlertSettings> {
+  return request<MonitorAlertSettings>(`/monitors/${monitorId}/alert-settings`, {
+    method: 'PUT',
+    body: payload,
+  });
+}
+
+/**
+ * Atomically replaces the channel routing for a monitor.
+ * channelIds: normal channels. escalationChannelIds: escalation-only channels.
+ * Pass empty arrays to reset (engine falls back to all user channels).
+ */
+export async function setMonitorAlertChannels(
+  monitorId: string,
+  payload: SetChannelsPayload,
+): Promise<SetChannelsResponse> {
+  return request<SetChannelsResponse>(`/monitors/${monitorId}/alert-settings/channels`, {
+    method: 'PUT',
+    body: payload,
+  });
+}
+
+/**
+ * Returns recent suppressed alerts for a monitor (newest first, max 20).
+ */
+export async function getSuppressedAlerts(monitorId: string): Promise<SuppressedAlert[]> {
+  return request<SuppressedAlert[]>(`/monitors/${monitorId}/alert-settings/suppressed`);
 }

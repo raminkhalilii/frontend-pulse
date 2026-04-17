@@ -1,7 +1,8 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { ExternalLink, Edit2 } from 'lucide-react'
+import { ExternalLink, Edit2, BellOff, Bell } from 'lucide-react'
+import Link from 'next/link'
 import type { Monitor, MonitorStatus } from '@/types'
 import GlassCard from '@/components/ui/GlassCard'
 
@@ -55,9 +56,10 @@ interface MonitorCardProps {
   monitor: Monitor
   history: PingEntry[]
   onEdit?: (monitor: Monitor) => void
+  quietHoursActive?: boolean
 }
 
-export function MonitorCard({ monitor, history, onEdit }: MonitorCardProps) {
+export function MonitorCard({ monitor, history, onEdit, quietHoursActive = false }: MonitorCardProps) {
   const isDown    = monitor.latestStatus === 'DOWN'
   const isUp      = monitor.latestStatus === 'UP'
   const hasStatus = monitor.latestStatus !== undefined
@@ -113,6 +115,24 @@ export function MonitorCard({ monitor, history, onEdit }: MonitorCardProps) {
           </div>
 
           <div className="flex flex-none items-center gap-2">
+            {quietHoursActive ? (
+              <span
+                title="Quiet hours active — alerts suppressed"
+                aria-label="Quiet hours active"
+                className="text-slate-600"
+              >
+                <BellOff size={13} aria-hidden="true" />
+              </span>
+            ) : (
+              <Link
+                href={`/dashboard/monitors/${monitor.id}/alerts`}
+                aria-label="Alert settings"
+                title="Alert settings"
+                className="text-slate-500 transition-colors hover:text-slate-300"
+              >
+                <Bell size={13} />
+              </Link>
+            )}
             <button
               onClick={() => onEdit?.(monitor)}
               aria-label="Edit monitor"

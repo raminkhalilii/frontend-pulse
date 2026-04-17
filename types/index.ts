@@ -20,6 +20,7 @@ export interface Monitor {
   latestLatencyMs?: number | null;
   latestCheckedAt?: string;
   heartbeats?: HeartbeatEntry[];
+  alertSettings?: import('./alert-settings').MonitorAlertSettings;
 }
 
 export interface MonitorUpdatedPayload {
