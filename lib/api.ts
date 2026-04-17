@@ -5,6 +5,7 @@ import type {
   CreateAlertChannelPayload,
   CreateMonitorPayload,
   Monitor,
+  PlatformTestResult,
   UpdateAlertChannelPayload,
   UpdateMonitorPayload,
   WebhookDeliveryLog,
@@ -148,4 +149,22 @@ export async function getWebhookLogs(
   return request<WebhookDeliveryLog[]>(
     `/alert-channels/${id}/webhook-logs?limit=${limit}&offset=${offset}`,
   );
+}
+
+// ── Platform (Slack / Discord) ────────────────────────────────────────────────
+
+/**
+ * Fires a test Slack Block Kit message to a SLACK channel.
+ * Always returns a result — never throws on delivery failures.
+ */
+export async function testSlackChannel(id: string): Promise<PlatformTestResult> {
+  return request<PlatformTestResult>(`/alert-channels/${id}/test-slack`, { method: 'POST' });
+}
+
+/**
+ * Fires a test Discord Embed message to a DISCORD channel.
+ * Always returns a result — never throws on delivery failures.
+ */
+export async function testDiscordChannel(id: string): Promise<PlatformTestResult> {
+  return request<PlatformTestResult>(`/alert-channels/${id}/test-discord`, { method: 'POST' });
 }
