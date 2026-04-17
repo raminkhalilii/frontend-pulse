@@ -7,6 +7,8 @@ import type {
   Monitor,
   UpdateAlertChannelPayload,
   UpdateMonitorPayload,
+  WebhookDeliveryLog,
+  WebhookTestResult,
 } from '@/types';
 
 /**
@@ -122,4 +124,28 @@ export async function deleteAlertChannel(id: string): Promise<void> {
 
 export async function testAlertChannel(id: string): Promise<void> {
   return request<void>(`/alert-channels/${id}/test`, { method: 'POST' });
+}
+
+// ── Webhook ───────────────────────────────────────────────────────────────────
+
+/**
+ * Fires a synthetic test payload to a WEBHOOK channel.
+ * Always returns a result object — never throws on delivery failures.
+ * May throw on configuration errors (e.g. SSRF-blocked URL).
+ */
+export async function testWebhookChannel(id: string): Promise<WebhookTestResult> {
+  return request<WebhookTestResult>(`/alert-channels/${id}/test-webhook`, { method: 'POST' });
+}
+
+/**
+ * Returns recent webhook delivery log entries for a channel, newest first.
+ */
+export async function getWebhookLogs(
+  id: string,
+  limit = 10,
+  offset = 0,
+): Promise<WebhookDeliveryLog[]> {
+  return request<WebhookDeliveryLog[]>(
+    `/alert-channels/${id}/webhook-logs?limit=${limit}&offset=${offset}`,
+  );
 }

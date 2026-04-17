@@ -2,14 +2,14 @@
 
 import { useState, useEffect, FormEvent } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X } from 'lucide-react'
+import { X, Eye, EyeOff, Plus, RotateCcw, Trash2 } from 'lucide-react'
 import GlassCard from '@/components/ui/GlassCard'
 import Button from '@/components/ui/Button'
 import { FormField } from '@/components/auth/AuthShell'
 import { updateAlertChannel } from '@/lib/api'
 import type { AlertChannel, UpdateAlertChannelPayload } from '@/types'
 
-// ─── Inline toggle — mirrors the exact toggle pattern used in the page ────────
+// ─── Shared toggle ────────────────────────────────────────────────────────────
 
 function Toggle({
   checked,
@@ -49,6 +49,133 @@ function Toggle({
   )
 }
 
+// ─── Webhook secret section ───────────────────────────────────────────────────
+//
+// Three possible states:
+//   'unchanged' — leave whatever is on the server as-is
+//   'remove'    — send secret: null  (clears the secret)
+//   'set-new'   — send secret: <newSecret>
+
+type SecretMode = 'unchanged' | 'remove' | 'set-new'
+
+interface WebhookSecretFieldProps {
+  hasSecret: boolean
+  secretMode: SecretMode
+  newSecret: string
+  showNewSecret: boolean
+  onSecretModeChange: (m: SecretMode) => void
+  onNewSecretChange: (v: string) => void
+  onToggleShowSecret: () => void
+}
+
+function WebhookSecretField({
+  hasSecret,
+  secretMode,
+  newSecret,
+  showNewSecret,
+  onSecretModeChange,
+  onNewSecretChange,
+  onToggleShowSecret,
+}: WebhookSecretFieldProps) {
+  return (
+    <div className="space-y-2">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">
+        Signing Secret
+      </p>
+
+      {/* ── Case 1: secret exists, no pending change ── */}
+      {hasSecret && secretMode === 'unchanged' && (
+        <div className="flex items-center gap-3 rounded-lg border border-white/[0.06] bg-white/[0.03] px-4 py-2.5">
+          <span className="flex-1 font-mono text-sm text-slate-400 tracking-widest">
+            ••••••••
+          </span>
+          <button
+            type="button"
+            onClick={() => onSecretModeChange('set-new')}
+            title="Replace with a new secret"
+            className="flex cursor-pointer items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-medium text-slate-400 transition-colors hover:bg-white/[0.05] hover:text-slate-200"
+          >
+            <RotateCcw size={11} aria-hidden="true" />
+            Regenerate
+          </button>
+          <button
+            type="button"
+            onClick={() => onSecretModeChange('remove')}
+            title="Remove signing secret"
+            className="flex cursor-pointer items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-medium text-pulse-red/70 transition-colors hover:bg-pulse-red/[0.08] hover:text-pulse-red"
+          >
+            <Trash2 size={11} aria-hidden="true" />
+            Remove
+          </button>
+        </div>
+      )}
+
+      {/* ── Case 2: no secret, no pending change ── */}
+      {!hasSecret && secretMode === 'unchanged' && (
+        <button
+          type="button"
+          onClick={() => onSecretModeChange('set-new')}
+          className="flex cursor-pointer items-center gap-1.5 text-[12px] text-slate-500 transition-colors hover:text-slate-300"
+        >
+          <Plus size={12} aria-hidden="true" />
+          Add signing secret
+        </button>
+      )}
+
+      {/* ── Case 3: pending removal ── */}
+      {secretMode === 'remove' && (
+        <div className="flex items-center gap-3 rounded-lg border border-pulse-red/20 bg-pulse-red/[0.05] px-4 py-2.5">
+          <span className="flex-1 text-sm text-pulse-red">
+            Secret will be removed on save
+          </span>
+          <button
+            type="button"
+            onClick={() => onSecretModeChange('unchanged')}
+            className="cursor-pointer text-[11px] text-slate-400 transition-colors hover:text-slate-200"
+          >
+            Cancel
+          </button>
+        </div>
+      )}
+
+      {/* ── Case 4: entering a new secret ── */}
+      {secretMode === 'set-new' && (
+        <div className="space-y-1.5">
+          <div className="relative">
+            <input
+              id="edit-webhook-secret"
+              type={showNewSecret ? 'text' : 'password'}
+              autoComplete="new-password"
+              value={newSecret}
+              onChange={(e) => onNewSecretChange(e.target.value)}
+              placeholder={hasSecret ? 'Enter new secret to replace existing' : 'Enter signing secret'}
+              className="w-full rounded-lg border border-white/[0.08] bg-white/5 px-4 py-2.5 pr-10 text-sm text-white placeholder-slate-700 transition-all duration-200 focus:border-pulse-blue/50 focus:bg-white/[0.07] focus:shadow-[0_0_0_3px_rgba(59,130,246,0.12)] focus:outline-none"
+            />
+            <button
+              type="button"
+              onClick={onToggleShowSecret}
+              aria-label={showNewSecret ? 'Hide secret' : 'Show secret'}
+              className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-slate-500 transition-colors hover:text-slate-300"
+            >
+              {showNewSecret
+                ? <EyeOff size={14} aria-hidden="true" />
+                : <Eye size={14} aria-hidden="true" />
+              }
+            </button>
+          </div>
+          <button
+            type="button"
+            onClick={() => { onSecretModeChange('unchanged'); onNewSecretChange('') }}
+            className="cursor-pointer text-[11px] text-slate-500 transition-colors hover:text-slate-300"
+          >
+            Cancel
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 interface EditChannelModalProps {
@@ -64,10 +191,15 @@ export function EditChannelModal({
   onClose,
   onUpdated,
 }: EditChannelModalProps) {
-  const [label,   setLabel]   = useState('')
-  const [enabled, setEnabled] = useState(true)
-  const [loading, setLoading] = useState(false)
-  const [error,   setError]   = useState('')
+  const [label,         setLabel]         = useState('')
+  const [enabled,       setEnabled]       = useState(true)
+  const [loading,       setLoading]       = useState(false)
+  const [error,         setError]         = useState('')
+
+  // Webhook-only secret state
+  const [secretMode,    setSecretMode]    = useState<SecretMode>('unchanged')
+  const [newSecret,     setNewSecret]     = useState('')
+  const [showNewSecret, setShowNewSecret] = useState(false)
 
   // Pre-fill whenever the target channel changes
   useEffect(() => {
@@ -75,6 +207,10 @@ export function EditChannelModal({
       setLabel(channel.label ?? '')
       setEnabled(channel.enabled)
       setError('')
+      // Reset webhook-specific state
+      setSecretMode('unchanged')
+      setNewSecret('')
+      setShowNewSecret(false)
     }
   }, [channel, open])
 
@@ -86,8 +222,19 @@ export function EditChannelModal({
     setLoading(true)
     try {
       const payload: UpdateAlertChannelPayload = {}
+
       if (label.trim() !== (channel.label ?? '')) payload.label = label.trim()
       if (enabled !== channel.enabled)             payload.enabled = enabled
+
+      // Webhook secret changes
+      if (channel.type === 'WEBHOOK') {
+        if (secretMode === 'remove') {
+          payload.secret = null
+        } else if (secretMode === 'set-new' && newSecret.trim()) {
+          payload.secret = newSecret.trim()
+        }
+        // secretMode === 'unchanged' → don't include secret in payload
+      }
 
       // Nothing changed — skip the network call
       if (Object.keys(payload).length === 0) {
@@ -109,6 +256,8 @@ export function EditChannelModal({
     if (loading) return
     onClose()
   }
+
+  const isWebhook = channel?.type === 'WEBHOOK'
 
   return (
     <AnimatePresence>
@@ -151,10 +300,12 @@ export function EditChannelModal({
                     id="edit-channel-title"
                     className="text-base font-semibold text-white"
                   >
-                    Edit Channel
+                    Edit {isWebhook ? 'Webhook' : 'Email'} Channel
                   </h2>
                   <p className="mt-0.5 text-sm text-slate-500">
-                    Update the label or enable / disable this channel.
+                    {isWebhook
+                      ? 'Update the label, enabled state, or signing secret.'
+                      : 'Update the label or enable / disable this channel.'}
                   </p>
                 </div>
                 <button
@@ -169,12 +320,16 @@ export function EditChannelModal({
 
               {/* Form */}
               <form onSubmit={handleSubmit} className="space-y-5" noValidate>
-                {/* Read-only address */}
+
+                {/* Read-only address / URL */}
                 <div className="space-y-1.5">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">
-                    Address
+                    {isWebhook ? 'Webhook URL' : 'Address'}
                   </p>
-                  <p className="truncate rounded-lg border border-white/[0.06] bg-white/[0.03] px-4 py-2.5 font-mono text-sm text-slate-400">
+                  <p
+                    className="truncate rounded-lg border border-white/[0.06] bg-white/[0.03] px-4 py-2.5 font-mono text-sm text-slate-400"
+                    title={channel.value}
+                  >
                     {channel.value}
                   </p>
                 </div>
@@ -186,7 +341,11 @@ export function EditChannelModal({
                   autoComplete="off"
                   value={label}
                   onChange={(e) => setLabel(e.target.value)}
-                  placeholder="e.g. Work email, On-call phone"
+                  placeholder={
+                    isWebhook
+                      ? 'e.g. Production alerts, PagerDuty'
+                      : 'e.g. Work email, On-call phone'
+                  }
                 />
 
                 {/* Enabled toggle */}
@@ -200,6 +359,19 @@ export function EditChannelModal({
                     label={enabled ? 'Enabled — will receive alerts' : 'Disabled — alerts paused'}
                   />
                 </div>
+
+                {/* Webhook-only: signing secret management */}
+                {isWebhook && (
+                  <WebhookSecretField
+                    hasSecret={channel.hasSecret ?? false}
+                    secretMode={secretMode}
+                    newSecret={newSecret}
+                    showNewSecret={showNewSecret}
+                    onSecretModeChange={setSecretMode}
+                    onNewSecretChange={setNewSecret}
+                    onToggleShowSecret={() => setShowNewSecret((s) => !s)}
+                  />
+                )}
 
                 {/* Inline error */}
                 <AnimatePresence>
