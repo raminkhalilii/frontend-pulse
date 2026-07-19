@@ -1,25 +1,31 @@
 'use client'
 
 import type { ReactNode } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { Activity, Bell, Settings, LogOut, ChevronRight } from 'lucide-react'
+import { Activity, AlertTriangle, Bell, Globe, Settings, LogOut, ChevronRight } from 'lucide-react'
 import { removeToken, getToken } from '@/lib/auth'
+import { getSubscriberStats } from '@/lib/api/subscribers'
 
 // ─── Nav items ────────────────────────────────────────────────────────────────
 
 const NAV_ITEMS = [
-  { href: '/dashboard',        label: 'Monitors', icon: Activity },
-  { href: '/dashboard/alerts', label: 'Alerts',   icon: Bell     },
-  { href: '/settings',         label: 'Settings', icon: Settings },
+  { href: '/dashboard',              label: 'Monitors',    icon: Activity      },
+  { href: '/dashboard/alerts',       label: 'Alerts',      icon: Bell          },
+  { href: '/dashboard/incidents',    label: 'Incidents',   icon: AlertTriangle },
+  { href: '/dashboard/status-page',  label: 'Status Page', icon: Globe         },
+  { href: '/settings',               label: 'Settings',    icon: Settings      },
 ] as const
 
 // ─── Breadcrumb label map ─────────────────────────────────────────────────────
 
 const PAGE_LABELS: Record<string, string> = {
-  '/dashboard':        'Monitors',
-  '/dashboard/alerts': 'Alerts',
-  '/settings':         'Settings',
+  '/dashboard':              'Monitors',
+  '/dashboard/alerts':       'Alerts',
+  '/dashboard/incidents':    'Incidents',
+  '/dashboard/status-page':  'Status Page',
+  '/settings':               'Settings',
 }
 
 // ─── JWT display helper (client-side decode only — no security guarantees) ────
@@ -46,9 +52,30 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const pathname = usePathname()
   const router   = useRouter()
 
-  const email        = parseJwtEmail(getToken())
+  // Deferred until after mount: getToken() reads document.cookie, which is
+  // unavailable during SSR but present on the client's very first hydration
+  // pass — rendering it immediately would make that first pass disagree with
+  // the server-rendered HTML and trigger a hydration mismatch.
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
+
+  const email        = mounted ? parseJwtEmail(getToken()) : null
   const avatarLetter = email ? email[0].toUpperCase() : 'U'
-  const pageLabel    = PAGE_LABELS[pathname] ?? 'Page'
+
+  // Fetch confirmed subscriber count for the Status Page badge.
+  // Non-critical: silently ignored on error (e.g. page not yet initialised).
+  const [subscriberCount, setSubscriberCount] = useState<number | null>(null)
+  useEffect(() => {
+    getSubscriberStats()
+      .then((s) => setSubscriberCount(s.confirmed))
+      .catch(() => { /* non-critical */ })
+  }, [])
+
+  // Exact match first, then longest prefix match for nested routes
+  const pageLabel = PAGE_LABELS[pathname] ??
+    (Object.entries(PAGE_LABELS)
+      .filter(([k]) => pathname.startsWith(k + '/'))
+      .sort((a, b) => b[0].length - a[0].length)[0]?.[1] ?? 'Page')
 
   function handleLogout() {
     removeToken()
@@ -86,6 +113,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   ? pathname === href
                   : pathname === href || pathname.startsWith(`${href}/`)
 
+              const showBadge =
+                href === '/dashboard/status-page' &&
+                subscriberCount !== null &&
+                subscriberCount > 0
+
               return (
                 <li key={href}>
                   <Link
@@ -98,7 +130,15 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                     ].join(' ')}
                   >
                     <Icon size={16} className="flex-none" aria-hidden="true" />
-                    {label}
+                    <span className="flex-1">{label}</span>
+                    {showBadge && (
+                      <span
+                        className="ml-auto flex-none rounded-full bg-pulse-blue/20 px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-pulse-blue"
+                        aria-label={`${subscriberCount} subscribers`}
+                      >
+                        {subscriberCount > 999 ? '999+' : subscriberCount}
+                      </span>
+                    )}
                   </Link>
                 </li>
               )

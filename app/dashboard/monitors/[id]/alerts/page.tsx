@@ -13,7 +13,9 @@ import { QuietHoursSection, type QuietHoursSectionHandle } from '@/components/mo
 import { SuppressedAlertsLog } from '@/components/monitor-alerts/SuppressedAlertsLog'
 import { useUnsavedChangesGuard } from '@/components/monitor-alerts/UnsavedChangesGuard'
 import { getMonitorAlertSettings, getAlertChannels, getMonitors } from '@/lib/api'
+import { listIncidents } from '@/lib/api/incidents'
 import type { Monitor, AlertChannel } from '@/types'
+import type { Incident } from '@/types/incident'
 import type { AlertSettingsResponse, MonitorAlertSettings } from '@/types/alert-settings'
 
 // ─── Loading skeleton ─────────────────────────────────────────────────────────
@@ -45,6 +47,23 @@ export default function MonitorAlertsPage() {
   const [allChannels,   setAllChannels]   = useState<AlertChannel[]>([])
   const [loading,       setLoading]       = useState(true)
   const [fetchError,    setFetchError]    = useState('')
+
+  // ── Active incident for this monitor (optional callout) ────────────────
+  const [activeIncident, setActiveIncident] = useState<Incident | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    listIncidents()
+      .then((incs) => {
+        if (cancelled) return
+        const found = incs.find(
+          (i) => i.status !== 'RESOLVED' && i.affectedMonitorIds.includes(monitorId),
+        ) ?? null
+        setActiveIncident(found)
+      })
+      .catch(() => { /* non-critical — just don't show the callout */ })
+    return () => { cancelled = true }
+  }, [monitorId])
 
   // ── Per-section dirty state ──────────────────────────────────────────────
   const [thresholdDirty,  setThresholdDirty]  = useState(false)
@@ -156,6 +175,31 @@ export default function MonitorAlertsPage() {
             Per-monitor threshold overrides, channel routing, and quiet hours.
           </p>
         </div>
+
+        {/* ── Active incident callout ── */}
+        {activeIncident && (
+          <div className="mb-6 flex items-center justify-between gap-4 rounded-xl border border-orange-500/20 bg-orange-500/[0.06] px-4 py-3">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <span
+                className="flex h-2 w-2 flex-none rounded-full bg-orange-400"
+                aria-hidden="true"
+              />
+              <p className="text-sm text-orange-300 truncate">
+                This monitor has an active incident:&nbsp;
+                <span className="font-medium text-orange-200">
+                  {activeIncident.title}
+                </span>
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => router.push(`/dashboard/incidents/${activeIncident.id}`)}
+              className="flex-none cursor-pointer text-xs font-medium text-orange-400 hover:text-orange-300 hover:underline transition-colors whitespace-nowrap"
+            >
+              View incident →
+            </button>
+          </div>
+        )}
 
         {/* ── Content ── */}
         {loading ? (
