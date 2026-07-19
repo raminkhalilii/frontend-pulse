@@ -27,7 +27,7 @@ function buildRows(
   const linked = linkedMonitors
     .slice()
     .sort((a, b) => a.position - b.position)
-    .map((lm) => {
+    .map((lm): MonitorVisibilityRow | null => {
       const mon = allMonitors.find((m) => m.id === lm.id)
       if (!mon) return null
       return {
@@ -38,7 +38,7 @@ function buildRows(
         displayName: lm.displayName ?? '',
         showResponseTime: lm.showResponseTime,
         position: lm.position,
-      } satisfies MonitorVisibilityRow
+      }
     })
     .filter((r): r is MonitorVisibilityRow => r !== null)
 
