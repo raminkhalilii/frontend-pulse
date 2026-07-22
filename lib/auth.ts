@@ -27,3 +27,20 @@ export function getToken(): string | null {
 export function removeToken(): void {
   document.cookie = `${TOKEN_COOKIE}=; path=/; max-age=0`;
 }
+
+/**
+ * Client-side JWT decode for display purposes only (no signature check).
+ * The payload only carries `sub` and `email` (see backend AuthService.generateTokens) —
+ * there is no `/users/me` endpoint, so this is the only source of user info the
+ * frontend has.
+ */
+export function parseJwtEmail(token: string | null): string | null {
+  if (!token) return null;
+  try {
+    const segment = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+    const payload = JSON.parse(atob(segment)) as Record<string, unknown>;
+    return typeof payload.email === 'string' ? payload.email : null;
+  } catch {
+    return null;
+  }
+}

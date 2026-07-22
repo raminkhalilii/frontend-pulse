@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { Activity, AlertTriangle, Bell, Globe, Settings, LogOut, ChevronRight } from 'lucide-react'
-import { removeToken, getToken } from '@/lib/auth'
+import { removeToken, getToken, parseJwtEmail } from '@/lib/auth'
 import { getSubscriberStats } from '@/lib/api/subscribers'
 
 // ─── Nav items ────────────────────────────────────────────────────────────────
@@ -26,20 +26,6 @@ const PAGE_LABELS: Record<string, string> = {
   '/dashboard/incidents':    'Incidents',
   '/dashboard/status-page':  'Status Page',
   '/settings':               'Settings',
-}
-
-// ─── JWT display helper (client-side decode only — no security guarantees) ────
-
-function parseJwtEmail(token: string | null): string | null {
-  if (!token) return null
-  try {
-    // Base64url → Base64 → JSON
-    const segment = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')
-    const payload = JSON.parse(atob(segment)) as Record<string, unknown>
-    return typeof payload.email === 'string' ? payload.email : null
-  } catch {
-    return null
-  }
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
