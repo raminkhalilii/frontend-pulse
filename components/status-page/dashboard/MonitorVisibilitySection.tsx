@@ -59,9 +59,15 @@ function buildRows(
 
 // ── Status dot ────────────────────────────────────────────────────────────────
 
-function StatusDot({ status }: { status: 'UP' | 'DOWN' | undefined }) {
+function StatusDot({ status }: { status: 'UP' | 'DOWN' | 'MAINTENANCE' | undefined }) {
   const color =
-    status === 'UP' ? 'bg-pulse-green' : status === 'DOWN' ? 'bg-pulse-red' : 'bg-slate-600'
+    status === 'UP'
+      ? 'bg-pulse-green'
+      : status === 'DOWN'
+        ? 'bg-pulse-red'
+        : status === 'MAINTENANCE'
+          ? 'bg-pulse-blue'
+          : 'bg-slate-600'
   return (
     <span
       className={`inline-block h-2 w-2 flex-none rounded-full ${color}`}

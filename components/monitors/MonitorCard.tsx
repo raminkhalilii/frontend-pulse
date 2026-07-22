@@ -1,7 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { ExternalLink, Edit2, BellOff, Bell } from 'lucide-react'
+import { ExternalLink, Edit2, BellOff, Bell, Wrench } from 'lucide-react'
 import Link from 'next/link'
 import type { Monitor, MonitorStatus } from '@/types'
 import GlassCard from '@/components/ui/GlassCard'
@@ -42,6 +42,8 @@ function Sparkline({ history }: { history: PingEntry[] }) {
                 ? 'rgba(255,255,255,0.06)'
                 : entry.status === 'UP'
                 ? 'rgba(16,185,129,0.70)'
+                : entry.status === 'MAINTENANCE'
+                ? 'rgba(59,130,246,0.65)'
                 : 'rgba(239,68,68,0.72)',
           }}
         />
@@ -60,14 +62,17 @@ interface MonitorCardProps {
 }
 
 export function MonitorCard({ monitor, history, onEdit, quietHoursActive = false }: MonitorCardProps) {
-  const isDown    = monitor.latestStatus === 'DOWN'
-  const isUp      = monitor.latestStatus === 'UP'
+  const isDown        = monitor.latestStatus === 'DOWN'
+  const isUp          = monitor.latestStatus === 'UP'
+  const isMaintenance = monitor.latestStatus === 'MAINTENANCE'
   const hasStatus = monitor.latestStatus !== undefined
 
+  // Maintenance heartbeats don't count against (or for) uptime.
+  const countedHistory = history.filter((h) => h.status !== 'MAINTENANCE')
   const uptimePct =
-    history.length === 0
+    countedHistory.length === 0
       ? null
-      : ((history.filter((h) => h.status === 'UP').length / history.length) * 100).toFixed(2)
+      : ((countedHistory.filter((h) => h.status === 'UP').length / countedHistory.length) * 100).toFixed(2)
 
   const latency =
     monitor.latestLatencyMs != null ? `${monitor.latestLatencyMs}ms` : '—'
@@ -133,6 +138,14 @@ export function MonitorCard({ monitor, history, onEdit, quietHoursActive = false
                 <Bell size={13} />
               </Link>
             )}
+            <Link
+              href={`/dashboard/monitors/${monitor.id}/maintenance`}
+              aria-label="Maintenance windows"
+              title="Maintenance windows"
+              className="text-slate-500 transition-colors hover:text-slate-300"
+            >
+              <Wrench size={13} />
+            </Link>
             <button
               onClick={() => onEdit?.(monitor)}
               aria-label="Edit monitor"
@@ -143,6 +156,13 @@ export function MonitorCard({ monitor, history, onEdit, quietHoursActive = false
             </button>
             {!hasStatus ? (
               <span className="font-mono text-[10px] text-slate-600">PENDING</span>
+            ) : isMaintenance ? (
+              <>
+                <span className="relative flex h-2 w-2">
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-pulse-blue" />
+                </span>
+                <span className="font-mono text-[10px] font-semibold text-pulse-blue">MAINTENANCE</span>
+              </>
             ) : isUp ? (
               <>
                 <span className="relative flex h-2 w-2">

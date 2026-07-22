@@ -12,19 +12,31 @@ import { UptimeBar } from './UptimeBar'
 function statusDotColor(status: StatusPageMonitorData['currentStatus']): string {
   if (status === 'UP') return '#16a34a'
   if (status === 'DOWN') return '#dc2626'
+  if (status === 'MAINTENANCE') return '#3b82f6'
   return '#9ca3af' // UNKNOWN → gray
 }
 
 function statusLabel(status: StatusPageMonitorData['currentStatus']): string {
   if (status === 'UP') return 'Operational'
   if (status === 'DOWN') return 'Down'
+  if (status === 'MAINTENANCE') return 'Scheduled Maintenance'
   return 'No data'
 }
 
 function statusLabelColor(status: StatusPageMonitorData['currentStatus']): string {
   if (status === 'UP') return 'text-green-700'
   if (status === 'DOWN') return 'text-red-700'
+  if (status === 'MAINTENANCE') return 'text-blue-700'
   return 'text-gray-500'
+}
+
+function formatMaintenanceEnd(iso: string): string {
+  return new Date(iso).toLocaleString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  })
 }
 
 // ── Warning icon (inline SVG — no lucide dependency in public pages) ──────────
@@ -122,7 +134,16 @@ export function MonitorStatusRow({ monitor, settings, activeIncident }: MonitorS
           {/* Pills */}
           <div className="flex flex-none items-center gap-2 flex-wrap justify-end">
             {/* Status label */}
-            <span className={`text-xs font-medium ${labelColor}`}>{label}</span>
+            <span className={`text-xs font-medium ${labelColor}`} title={monitor.maintenanceTitle ?? undefined}>
+              {label}
+            </span>
+
+            {/* Maintenance end time */}
+            {monitor.currentStatus === 'MAINTENANCE' && monitor.maintenanceEndsAt && (
+              <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs text-blue-600">
+                until {formatMaintenanceEnd(monitor.maintenanceEndsAt)}
+              </span>
+            )}
 
             {/* Uptime badge */}
             {settings.showUptimePercentage && monitor.uptimePercentage !== null && (

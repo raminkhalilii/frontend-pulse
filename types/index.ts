@@ -1,5 +1,5 @@
 export type MonitorFrequency = 'ONE_MIN' | 'FIVE_MIN' | 'THIRTY_MIN';
-export type MonitorStatus = 'UP' | 'DOWN';
+export type MonitorStatus = 'UP' | 'DOWN' | 'MAINTENANCE';
 
 export interface HeartbeatEntry {
   status: MonitorStatus;

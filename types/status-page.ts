@@ -23,7 +23,7 @@ export interface DailyUptimeSummary {
   hadOutage: boolean;
 }
 
-export type PublicMonitorStatus = 'UP' | 'DOWN' | 'UNKNOWN';
+export type PublicMonitorStatus = 'UP' | 'DOWN' | 'UNKNOWN' | 'MAINTENANCE';
 
 export interface StatusPageMonitorData {
   id: string;
@@ -35,6 +35,9 @@ export interface StatusPageMonitorData {
   lastCheckedAt: string | null;
   avgResponseTimeMs: number | null;
   showResponseTime: boolean;
+  /** Set only when currentStatus === 'MAINTENANCE'. */
+  maintenanceTitle: string | null;
+  maintenanceEndsAt: string | null;
 }
 
 export type UptimePeriodDays = 30 | 60 | 90;
@@ -100,7 +103,7 @@ export interface MonitorVisibilityRow {
   monitorId: string;
   name: string;
   /** current live status from Monitor.latestStatus */
-  liveStatus: 'UP' | 'DOWN' | undefined;
+  liveStatus: 'UP' | 'DOWN' | 'MAINTENANCE' | undefined;
   /** whether this monitor is included on the status page */
   included: boolean;
   /** optional public display name override */
