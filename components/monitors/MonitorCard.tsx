@@ -1,7 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { ExternalLink, Edit2, BellOff, Bell, Wrench } from 'lucide-react'
+import { ExternalLink, Edit2, BellOff, Bell, Wrench, ShieldCheck } from 'lucide-react'
 import Link from 'next/link'
 import type { Monitor, MonitorStatus } from '@/types'
 import GlassCard from '@/components/ui/GlassCard'
@@ -76,6 +76,7 @@ export function MonitorCard({ monitor, history, onEdit, quietHoursActive = false
 
   const latency =
     monitor.latestLatencyMs != null ? `${monitor.latestLatencyMs}ms` : '—'
+  const isHttps = monitor.url.startsWith('https://')
 
   return (
     <motion.div
@@ -146,6 +147,16 @@ export function MonitorCard({ monitor, history, onEdit, quietHoursActive = false
             >
               <Wrench size={13} />
             </Link>
+            {isHttps && (
+              <Link
+                href={`/dashboard/monitors/${monitor.id}/ssl`}
+                aria-label="SSL certificate"
+                title="SSL certificate"
+                className="text-slate-500 transition-colors hover:text-slate-300"
+              >
+                <ShieldCheck size={13} />
+              </Link>
+            )}
             <button
               onClick={() => onEdit?.(monitor)}
               aria-label="Edit monitor"
