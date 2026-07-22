@@ -36,6 +36,12 @@ function daysRemainingBadgeClasses(days: number | null): string {
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
+// Monitor creation/URL-change now enqueues an immediate SSL check, so a null
+// cert is normally transient (worker finishes within seconds) rather than the
+// old "wait for the daily cron" case. Poll briefly until it resolves.
+const POLL_INTERVAL_MS = 3000
+const MAX_POLL_ATTEMPTS = 20 // ~60s
+
 interface SslCertificateSectionProps {
   monitorId: string
 }
@@ -44,24 +50,45 @@ export function SslCertificateSection({ monitorId }: SslCertificateSectionProps)
   const [cert, setCert] = useState<SslCertificate | null>(null)
   const [loading, setLoading] = useState(true)
   const [fetchError, setFetchError] = useState('')
+  const [pollTimedOut, setPollTimedOut] = useState(false)
 
   useEffect(() => {
     let cancelled = false
-    setLoading(true)
-    getSslCertificate(monitorId)
-      .then((data) => {
-        if (!cancelled) setCert(data)
-      })
-      .catch((err) => {
+    let attempts = 0
+    let timeoutId: ReturnType<typeof setTimeout> | undefined
+
+    async function load(isInitial: boolean) {
+      if (isInitial) setLoading(true)
+      try {
+        const data = await getSslCertificate(monitorId)
+        if (cancelled) return
+        setCert(data)
+        setFetchError('')
+
+        if (!data) {
+          attempts += 1
+          if (attempts < MAX_POLL_ATTEMPTS) {
+            timeoutId = setTimeout(() => {
+              void load(false)
+            }, POLL_INTERVAL_MS)
+          } else {
+            setPollTimedOut(true)
+          }
+        }
+      } catch (err) {
         if (!cancelled) {
           setFetchError(err instanceof Error ? err.message : 'Failed to load certificate data.')
         }
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false)
-      })
+      } finally {
+        if (!cancelled && isInitial) setLoading(false)
+      }
+    }
+
+    void load(true)
+
     return () => {
       cancelled = true
+      if (timeoutId) clearTimeout(timeoutId)
     }
   }, [monitorId])
 
@@ -87,9 +114,20 @@ export function SslCertificateSection({ monitorId }: SslCertificateSectionProps)
       ) : fetchError ? (
         <p className="text-sm text-pulse-red">{fetchError}</p>
       ) : !cert ? (
-        <p className="py-6 text-center text-sm text-slate-500">
-          Not checked yet — the first check runs within 24h of this monitor being created.
-        </p>
+        pollTimedOut ? (
+          <p className="py-6 text-center text-sm text-slate-500">
+            Still not checked — this can take a little longer than usual. It will appear here
+            automatically once ready.
+          </p>
+        ) : (
+          <div className="flex items-center justify-center gap-2.5 py-6 text-sm text-slate-500">
+            <span
+              className="h-3.5 w-3.5 flex-none animate-spin rounded-full border border-slate-600 border-t-slate-300"
+              aria-hidden="true"
+            />
+            Checking certificate…
+          </div>
+        )
       ) : !cert.isValid ? (
         <div className="flex items-start gap-3 rounded-xl border border-pulse-red/20 bg-pulse-red/[0.06] px-4 py-3.5">
           <ShieldAlert size={18} className="mt-0.5 flex-none text-pulse-red" aria-hidden="true" />
