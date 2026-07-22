@@ -1,11 +1,12 @@
 'use client'
 
 import { useState, useRef, useCallback, useEffect } from 'react'
-import { GripVertical, Plus } from 'lucide-react'
+import { GripVertical, Plus, Image as ImageIcon } from 'lucide-react'
 import Link from 'next/link'
 import GlassCard from '@/components/ui/GlassCard'
 import Button from '@/components/ui/Button'
 import { Toggle } from '@/components/ui/Toggle'
+import { MonitorBadgeModal } from './MonitorBadgeModal'
 import type { Monitor } from '@/types'
 import type { StatusPageSettings, MonitorVisibilityRow } from '@/types/status-page'
 import { setStatusPageMonitors } from '@/lib/api/status-page'
@@ -104,6 +105,7 @@ export function MonitorVisibilitySection({
     buildRows(allMonitors, settings, linkedMonitors),
   )
   const [saving, setSaving] = useState(false)
+  const [badgeModalRow, setBadgeModalRow] = useState<MonitorVisibilityRow | null>(null)
 
   // Re-build when inputs change
   useEffect(() => {
@@ -347,9 +349,31 @@ export function MonitorVisibilitySection({
                 onChange={(v) => updateShowResponseTime(row.monitorId, v)}
               />
             </div>
+
+            {/* Uptime badge snippet — only meaningful once the monitor is public+linked */}
+            {row.included && (
+              <button
+                type="button"
+                onClick={() => setBadgeModalRow(row)}
+                aria-label={`Get uptime badge for ${row.name}`}
+                title="Uptime badge"
+                className="flex-none cursor-pointer text-slate-500 transition-colors hover:text-slate-300"
+              >
+                <ImageIcon size={14} />
+              </button>
+            )}
           </div>
         ))}
       </div>
+
+      {/* Badge snippet modal */}
+      <MonitorBadgeModal
+        open={badgeModalRow !== null}
+        onClose={() => setBadgeModalRow(null)}
+        slug={settings.slug}
+        monitorId={badgeModalRow?.monitorId ?? ''}
+        monitorName={badgeModalRow?.name ?? ''}
+      />
 
       {/* Save */}
       <div className="mt-5 pt-1">
