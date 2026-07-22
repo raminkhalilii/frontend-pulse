@@ -1,7 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { ExternalLink, Edit2, BellOff, Bell, Wrench, ShieldCheck } from 'lucide-react'
+import { ExternalLink, Edit2, BellOff, Bell, Wrench, ShieldCheck, Activity } from 'lucide-react'
 import Link from 'next/link'
 import type { Monitor, MonitorStatus } from '@/types'
 import GlassCard from '@/components/ui/GlassCard'
@@ -139,6 +139,14 @@ export function MonitorCard({ monitor, history, onEdit, quietHoursActive = false
                 <Bell size={13} />
               </Link>
             )}
+            <Link
+              href={`/dashboard/monitors/${monitor.id}/response-time`}
+              aria-label="Response time"
+              title="Response time"
+              className="text-slate-500 transition-colors hover:text-slate-300"
+            >
+              <Activity size={13} />
+            </Link>
             <Link
               href={`/dashboard/monitors/${monitor.id}/maintenance`}
               aria-label="Maintenance windows"

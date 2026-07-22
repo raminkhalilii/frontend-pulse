@@ -21,6 +21,12 @@ export interface Monitor {
   latestCheckedAt?: string;
   heartbeats?: HeartbeatEntry[];
   alertSettings?: import('./alert-settings').MonitorAlertSettings;
+  /** Apdex "satisfied" threshold T in ms (satisfied <= T, tolerating <= 4T). */
+  apdexThresholdMs: number;
+  /** Response-time performance-alert threshold in ms. Null disables performance alerting. */
+  responseTimeAlertThresholdMs: number | null;
+  /** Consecutive slow checks required before a performance alert fires. */
+  responseTimeAlertConsecutiveBreaches: number;
 }
 
 export interface MonitorUpdatedPayload {
@@ -41,6 +47,10 @@ export interface UpdateMonitorPayload {
   url?: string;
   frequency?: MonitorFrequency;
   isActive?: boolean;
+  apdexThresholdMs?: number;
+  /** Pass null to disable performance alerting. */
+  responseTimeAlertThresholdMs?: number | null;
+  responseTimeAlertConsecutiveBreaches?: number;
 }
 
 export interface AuthResponse {
