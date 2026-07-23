@@ -6,7 +6,22 @@ import { X } from 'lucide-react'
 import GlassCard from '@/components/ui/GlassCard'
 import Button from '@/components/ui/Button'
 import { FormField } from '@/components/auth/AuthShell'
+import {
+  MonitorTypeFields,
+  defaultApiConfig,
+  defaultHeartbeatConfig,
+  defaultKeywordConfig,
+  defaultPingConfig,
+  defaultTcpConfig,
+} from '@/components/monitors/MonitorTypeFields'
 import { updateMonitor } from '@/lib/api'
+import {
+  asApiConfig,
+  asHeartbeatConfig,
+  asKeywordConfig,
+  asPingConfig,
+  asTcpConfig,
+} from '@/lib/monitor-config'
 import type { Monitor, MonitorFrequency } from '@/types'
 
 // ─── Frequency pill options ───────────────────────────────────────────────────
@@ -30,6 +45,11 @@ export function EditMonitorModal({ open, monitor, onClose, onUpdated }: EditMoni
   const [name,      setName]      = useState('')
   const [url,       setUrl]       = useState('')
   const [frequency, setFrequency] = useState<MonitorFrequency>('FIVE_MIN')
+  const [keywordConfig, setKeywordConfig] = useState(defaultKeywordConfig())
+  const [tcpConfig, setTcpConfig] = useState(defaultTcpConfig())
+  const [pingConfig, setPingConfig] = useState(defaultPingConfig())
+  const [heartbeatConfig, setHeartbeatConfig] = useState(defaultHeartbeatConfig())
+  const [apiConfig, setApiConfig] = useState(defaultApiConfig())
   const [error,     setError]     = useState('')
   const [loading,   setLoading]   = useState(false)
 
@@ -37,8 +57,13 @@ export function EditMonitorModal({ open, monitor, onClose, onUpdated }: EditMoni
   useEffect(() => {
     if (monitor) {
       setName(monitor.name)
-      setUrl(monitor.url)
+      setUrl(monitor.url ?? '')
       setFrequency(monitor.frequency)
+      setKeywordConfig(asKeywordConfig(monitor) ?? defaultKeywordConfig())
+      setTcpConfig(asTcpConfig(monitor) ?? defaultTcpConfig())
+      setPingConfig(asPingConfig(monitor) ?? defaultPingConfig())
+      setHeartbeatConfig(asHeartbeatConfig(monitor) ?? defaultHeartbeatConfig())
+      setApiConfig(asApiConfig(monitor) ?? defaultApiConfig())
       setError('')
     }
   }, [monitor, open])
@@ -52,8 +77,13 @@ export function EditMonitorModal({ open, monitor, onClose, onUpdated }: EditMoni
     try {
       const updated = await updateMonitor(monitor.id, {
         name: name !== monitor.name ? name : undefined,
-        url: url !== monitor.url ? url : undefined,
+        url: monitor.url !== null && url !== monitor.url ? url : undefined,
         frequency: frequency !== monitor.frequency ? frequency : undefined,
+        ...(monitor.type === 'KEYWORD' ? { keywordConfig } : {}),
+        ...(monitor.type === 'TCP' ? { tcpConfig } : {}),
+        ...(monitor.type === 'PING' ? { pingConfig } : {}),
+        ...(monitor.type === 'HEARTBEAT' ? { heartbeatConfig } : {}),
+        ...(monitor.type === 'API' ? { apiConfig } : {}),
       })
       onUpdated(updated)
       onClose()
@@ -139,40 +169,47 @@ export function EditMonitorModal({ open, monitor, onClose, onUpdated }: EditMoni
                   placeholder="Production API"
                 />
 
-                <FormField
-                  label="URL"
-                  id="edit-mon-url"
-                  type="url"
-                  required
-                  autoComplete="off"
-                  value={url}
-                  onChange={(e) => setUrl(e.target.value)}
-                  placeholder="example.com or https://api.example.com/health"
+                <MonitorTypeFields
+                  idPrefix="edit"
+                  type={monitor.type}
+                  url={url}
+                  onUrlChange={setUrl}
+                  keywordConfig={keywordConfig}
+                  onKeywordConfigChange={setKeywordConfig}
+                  tcpConfig={tcpConfig}
+                  onTcpConfigChange={setTcpConfig}
+                  pingConfig={pingConfig}
+                  onPingConfigChange={setPingConfig}
+                  heartbeatConfig={heartbeatConfig}
+                  onHeartbeatConfigChange={setHeartbeatConfig}
+                  apiConfig={apiConfig}
+                  onApiConfigChange={setApiConfig}
                 />
 
-                {/* Frequency pill selector */}
-                <div className="space-y-1.5">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">
-                    Check frequency
-                  </p>
-                  <div className="flex gap-2">
-                    {FREQ_OPTIONS.map((opt) => (
-                      <button
-                        key={opt.value}
-                        type="button"
-                        onClick={() => setFrequency(opt.value)}
-                        className={[
-                          'flex-1 rounded-lg border py-2 text-xs font-medium transition-all duration-150',
-                          frequency === opt.value
-                            ? 'border-pulse-blue/40 bg-pulse-blue/15 text-pulse-blue'
-                            : 'border-white/[0.08] bg-white/[0.03] text-slate-500 hover:bg-white/[0.07] hover:text-slate-300',
-                        ].join(' ')}
-                      >
-                        {opt.label}
-                      </button>
-                    ))}
+                {monitor.type !== 'HEARTBEAT' && (
+                  <div className="space-y-1.5">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">
+                      Check frequency
+                    </p>
+                    <div className="flex gap-2">
+                      {FREQ_OPTIONS.map((opt) => (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => setFrequency(opt.value)}
+                          className={[
+                            'flex-1 rounded-lg border py-2 text-xs font-medium transition-all duration-150',
+                            frequency === opt.value
+                              ? 'border-pulse-blue/40 bg-pulse-blue/15 text-pulse-blue'
+                              : 'border-white/[0.08] bg-white/[0.03] text-slate-500 hover:bg-white/[0.07] hover:text-slate-300',
+                          ].join(' ')}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* Error */}
                 <AnimatePresence>

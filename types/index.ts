@@ -1,3 +1,7 @@
+import type { MonitorConfig, MonitorType, MonitorTypeConfigFields } from './monitor-type';
+
+export * from './monitor-type';
+
 export type MonitorFrequency = 'ONE_MIN' | 'FIVE_MIN' | 'THIRTY_MIN';
 export type MonitorStatus = 'UP' | 'DOWN' | 'MAINTENANCE';
 
@@ -10,12 +14,20 @@ export interface HeartbeatEntry {
 export interface Monitor {
   id: string;
   name: string;
-  url: string;
+  type: MonitorType;
+  /** Null for TCP/PING/HEARTBEAT monitors, which have no URL. */
+  url: string | null;
+  /** Type-specific config as stored — cast to the shape matching `type` (see `MonitorConfig`). Null for HTTP. */
+  config: MonitorConfig | null;
   frequency: MonitorFrequency;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
   userId: string;
+  /** HEARTBEAT only: the public ingest token (used to build the copyable ingest URL). */
+  heartbeatToken?: string | null;
+  /** HEARTBEAT only: last time an inbound ping was received. */
+  lastHeartbeatAt?: string | null;
   latestStatus?: MonitorStatus;
   latestLatencyMs?: number | null;
   latestCheckedAt?: string;
@@ -36,14 +48,17 @@ export interface MonitorUpdatedPayload {
   timestamp: string;
 }
 
-export interface CreateMonitorPayload {
+export interface CreateMonitorPayload extends MonitorTypeConfigFields {
   name: string;
-  url: string;
+  type: MonitorType;
+  /** Required for HTTP/KEYWORD/API; omitted otherwise. */
+  url?: string;
   frequency: MonitorFrequency;
 }
 
-export interface UpdateMonitorPayload {
+export interface UpdateMonitorPayload extends MonitorTypeConfigFields {
   name?: string;
+  /** Only valid for HTTP/KEYWORD/API monitors. */
   url?: string;
   frequency?: MonitorFrequency;
   isActive?: boolean;

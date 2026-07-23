@@ -6,8 +6,16 @@ import { X } from 'lucide-react'
 import GlassCard from '@/components/ui/GlassCard'
 import Button from '@/components/ui/Button'
 import { FormField } from '@/components/auth/AuthShell'
+import {
+  MonitorTypeFields,
+  defaultApiConfig,
+  defaultHeartbeatConfig,
+  defaultKeywordConfig,
+  defaultPingConfig,
+  defaultTcpConfig,
+} from '@/components/monitors/MonitorTypeFields'
 import { createMonitor } from '@/lib/api'
-import type { Monitor, MonitorFrequency } from '@/types'
+import type { Monitor, MonitorFrequency, MonitorType } from '@/types'
 
 // ─── Frequency pill options ───────────────────────────────────────────────────
 
@@ -27,22 +35,47 @@ interface NewMonitorModalProps {
 
 export function NewMonitorModal({ open, onClose, onCreated }: NewMonitorModalProps) {
   const [name,      setName]      = useState('')
+  const [type,      setType]      = useState<MonitorType>('HTTP')
   const [url,       setUrl]       = useState('')
   const [frequency, setFrequency] = useState<MonitorFrequency>('FIVE_MIN')
+  const [keywordConfig, setKeywordConfig] = useState(defaultKeywordConfig())
+  const [tcpConfig, setTcpConfig] = useState(defaultTcpConfig())
+  const [pingConfig, setPingConfig] = useState(defaultPingConfig())
+  const [heartbeatConfig, setHeartbeatConfig] = useState(defaultHeartbeatConfig())
+  const [apiConfig, setApiConfig] = useState(defaultApiConfig())
   const [error,     setError]     = useState('')
   const [loading,   setLoading]   = useState(false)
+
+  function resetForm() {
+    setName('')
+    setType('HTTP')
+    setUrl('')
+    setFrequency('FIVE_MIN')
+    setKeywordConfig(defaultKeywordConfig())
+    setTcpConfig(defaultTcpConfig())
+    setPingConfig(defaultPingConfig())
+    setHeartbeatConfig(defaultHeartbeatConfig())
+    setApiConfig(defaultApiConfig())
+  }
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setError('')
     setLoading(true)
     try {
-      const monitor = await createMonitor({ name, url, frequency })
+      const monitor = await createMonitor({
+        name,
+        type,
+        frequency,
+        ...(type === 'HTTP' || type === 'KEYWORD' || type === 'API' ? { url } : {}),
+        ...(type === 'KEYWORD' ? { keywordConfig } : {}),
+        ...(type === 'TCP' ? { tcpConfig } : {}),
+        ...(type === 'PING' ? { pingConfig } : {}),
+        ...(type === 'HEARTBEAT' ? { heartbeatConfig } : {}),
+        ...(type === 'API' ? { apiConfig } : {}),
+      })
       onCreated(monitor)
-      // Reset form
-      setName('')
-      setUrl('')
-      setFrequency('FIVE_MIN')
+      resetForm()
       onClose()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create monitor.')
@@ -100,7 +133,7 @@ export function NewMonitorModal({ open, onClose, onCreated }: NewMonitorModalPro
                     New Monitor
                   </h2>
                   <p className="mt-0.5 text-sm text-slate-500">
-                    Track the uptime of any public URL.
+                    Track the uptime of any public URL, port, host, or API.
                   </p>
                 </div>
                 <button
@@ -126,40 +159,48 @@ export function NewMonitorModal({ open, onClose, onCreated }: NewMonitorModalPro
                   placeholder="Production API"
                 />
 
-                <FormField
-                  label="URL"
-                  id="mon-url"
-                  type="url"
-                  required
-                  autoComplete="off"
-                  value={url}
-                  onChange={(e) => setUrl(e.target.value)}
-                  placeholder="https://api.example.com/health"
+                <MonitorTypeFields
+                  idPrefix="new"
+                  type={type}
+                  onTypeChange={setType}
+                  url={url}
+                  onUrlChange={setUrl}
+                  keywordConfig={keywordConfig}
+                  onKeywordConfigChange={setKeywordConfig}
+                  tcpConfig={tcpConfig}
+                  onTcpConfigChange={setTcpConfig}
+                  pingConfig={pingConfig}
+                  onPingConfigChange={setPingConfig}
+                  heartbeatConfig={heartbeatConfig}
+                  onHeartbeatConfigChange={setHeartbeatConfig}
+                  apiConfig={apiConfig}
+                  onApiConfigChange={setApiConfig}
                 />
 
-                {/* Frequency pill selector */}
-                <div className="space-y-1.5">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">
-                    Check frequency
-                  </p>
-                  <div className="flex gap-2">
-                    {FREQ_OPTIONS.map((opt) => (
-                      <button
-                        key={opt.value}
-                        type="button"
-                        onClick={() => setFrequency(opt.value)}
-                        className={[
-                          'flex-1 rounded-lg border py-2 text-xs font-medium transition-all duration-150',
-                          frequency === opt.value
-                            ? 'border-pulse-blue/40 bg-pulse-blue/15 text-pulse-blue'
-                            : 'border-white/[0.08] bg-white/[0.03] text-slate-500 hover:bg-white/[0.07] hover:text-slate-300',
-                        ].join(' ')}
-                      >
-                        {opt.label}
-                      </button>
-                    ))}
+                {type !== 'HEARTBEAT' && (
+                  <div className="space-y-1.5">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">
+                      Check frequency
+                    </p>
+                    <div className="flex gap-2">
+                      {FREQ_OPTIONS.map((opt) => (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => setFrequency(opt.value)}
+                          className={[
+                            'flex-1 rounded-lg border py-2 text-xs font-medium transition-all duration-150',
+                            frequency === opt.value
+                              ? 'border-pulse-blue/40 bg-pulse-blue/15 text-pulse-blue'
+                              : 'border-white/[0.08] bg-white/[0.03] text-slate-500 hover:bg-white/[0.07] hover:text-slate-300',
+                          ].join(' ')}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* Error */}
                 <AnimatePresence>

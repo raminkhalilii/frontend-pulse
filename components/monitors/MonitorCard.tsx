@@ -1,9 +1,19 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { ExternalLink, Edit2, BellOff, Bell, Wrench, ShieldCheck, Activity } from 'lucide-react'
+import {
+  ExternalLink,
+  Edit2,
+  BellOff,
+  Bell,
+  Wrench,
+  ShieldCheck,
+  Activity,
+  HeartPulse,
+} from 'lucide-react'
 import Link from 'next/link'
 import type { Monitor, MonitorStatus } from '@/types'
+import { asPingConfig, asTcpConfig } from '@/lib/monitor-config'
 import GlassCard from '@/components/ui/GlassCard'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -11,6 +21,40 @@ import GlassCard from '@/components/ui/GlassCard'
 export interface PingEntry {
   status: MonitorStatus
   latencyMs: number | null
+}
+
+const URL_BASED_TYPES: Monitor['type'][] = ['HTTP', 'KEYWORD', 'API']
+const RESPONSE_TIME_ELIGIBLE_TYPES: Monitor['type'][] = ['HTTP', 'KEYWORD', 'API']
+
+/** What to show as the monitor's "target" line — a clickable URL for URL-based types, plain text otherwise. */
+function targetDisplay(monitor: Monitor): { text: string; href: string | null } {
+  switch (monitor.type) {
+    case 'HTTP':
+    case 'KEYWORD':
+    case 'API':
+      return { text: monitor.url ?? '—', href: monitor.url }
+    case 'TCP': {
+      const config = asTcpConfig(monitor)
+      return { text: config ? `${config.host}:${config.port}` : '—', href: null }
+    }
+    case 'PING': {
+      const config = asPingConfig(monitor)
+      return { text: config?.host ?? '—', href: null }
+    }
+    case 'HEARTBEAT':
+      return { text: 'Waiting for inbound pings', href: null }
+  }
+}
+
+function relativeTime(iso: string | null | undefined): string {
+  if (!iso) return 'never'
+  const diffMs = Date.now() - new Date(iso).getTime()
+  const minutes = Math.floor(diffMs / 60_000)
+  if (minutes < 1) return 'just now'
+  if (minutes < 60) return `${minutes}m ago`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `${hours}h ago`
+  return `${Math.floor(hours / 24)}d ago`
 }
 
 // ─── Sparkline ────────────────────────────────────────────────────────────────
@@ -76,7 +120,10 @@ export function MonitorCard({ monitor, history, onEdit, quietHoursActive = false
 
   const latency =
     monitor.latestLatencyMs != null ? `${monitor.latestLatencyMs}ms` : '—'
-  const isHttps = monitor.url.startsWith('https://')
+  const target = targetDisplay(monitor)
+  const showSslIcon = URL_BASED_TYPES.includes(monitor.type) && !!monitor.url?.startsWith('https://')
+  const showResponseTimeIcon = RESPONSE_TIME_ELIGIBLE_TYPES.includes(monitor.type)
+  const isHeartbeat = monitor.type === 'HEARTBEAT'
 
   return (
     <motion.div
@@ -108,16 +155,25 @@ export function MonitorCard({ monitor, history, onEdit, quietHoursActive = false
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-semibold text-white">{monitor.name}</p>
-            <a
-              href={monitor.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              title={monitor.url}
-              className="mt-0.5 inline-flex max-w-full items-center gap-1 truncate text-[11px] text-slate-500 transition-colors hover:text-pulse-blue"
-            >
-              <span className="truncate">{monitor.url}</span>
-              <ExternalLink size={9} className="flex-none" />
-            </a>
+            {target.href ? (
+              <a
+                href={target.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                title={target.text}
+                className="mt-0.5 inline-flex max-w-full items-center gap-1 truncate text-[11px] text-slate-500 transition-colors hover:text-pulse-blue"
+              >
+                <span className="truncate">{target.text}</span>
+                <ExternalLink size={9} className="flex-none" />
+              </a>
+            ) : (
+              <p
+                title={target.text}
+                className="mt-0.5 max-w-full truncate text-[11px] text-slate-500"
+              >
+                {target.text}
+              </p>
+            )}
           </div>
 
           <div className="flex flex-none items-center gap-2">
@@ -139,14 +195,26 @@ export function MonitorCard({ monitor, history, onEdit, quietHoursActive = false
                 <Bell size={13} />
               </Link>
             )}
-            <Link
-              href={`/dashboard/monitors/${monitor.id}/response-time`}
-              aria-label="Response time"
-              title="Response time"
-              className="text-slate-500 transition-colors hover:text-slate-300"
-            >
-              <Activity size={13} />
-            </Link>
+            {showResponseTimeIcon && (
+              <Link
+                href={`/dashboard/monitors/${monitor.id}/response-time`}
+                aria-label="Response time"
+                title="Response time"
+                className="text-slate-500 transition-colors hover:text-slate-300"
+              >
+                <Activity size={13} />
+              </Link>
+            )}
+            {isHeartbeat && (
+              <Link
+                href={`/dashboard/monitors/${monitor.id}/heartbeat`}
+                aria-label="Heartbeat ingest URL"
+                title="Heartbeat ingest URL"
+                className="text-slate-500 transition-colors hover:text-slate-300"
+              >
+                <HeartPulse size={13} />
+              </Link>
+            )}
             <Link
               href={`/dashboard/monitors/${monitor.id}/maintenance`}
               aria-label="Maintenance windows"
@@ -155,7 +223,7 @@ export function MonitorCard({ monitor, history, onEdit, quietHoursActive = false
             >
               <Wrench size={13} />
             </Link>
-            {isHttps && (
+            {showSslIcon && (
               <Link
                 href={`/dashboard/monitors/${monitor.id}/ssl`}
                 aria-label="SSL certificate"
@@ -205,7 +273,7 @@ export function MonitorCard({ monitor, history, onEdit, quietHoursActive = false
         {/* ── Middle: sparkline ── */}
         <Sparkline history={history} />
 
-        {/* ── Bottom: uptime + latency ── */}
+        {/* ── Bottom: uptime + latency/last-ping ── */}
         <div className="flex items-end justify-between border-t border-white/[0.05] pt-3">
           <div>
             <p className="mb-0.5 text-[10px] uppercase tracking-wider text-slate-600">
@@ -217,14 +285,14 @@ export function MonitorCard({ monitor, history, onEdit, quietHoursActive = false
           </div>
           <div className="text-right">
             <p className="mb-0.5 text-[10px] uppercase tracking-wider text-slate-600">
-              Latency
+              {isHeartbeat ? 'Last ping' : 'Latency'}
             </p>
             <p
               className={`font-mono text-sm font-semibold ${
                 isDown ? 'text-pulse-red' : 'text-white'
               }`}
             >
-              {latency}
+              {isHeartbeat ? relativeTime(monitor.lastHeartbeatAt) : latency}
             </p>
           </div>
         </div>
